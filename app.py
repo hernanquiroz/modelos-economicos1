@@ -49,85 +49,98 @@ def configurar_ejes(ax, xlabel, ylabel, title):
     ax.set_title(title, fontsize=16, fontweight='bold', pad=15)
     ax.grid(True, linestyle='--', alpha=0.4)
 
-def generar_fondo_is_lm():
+# ==========================================
+# FUNCIONES DE MODELOS INTERACTIVOS
+# ==========================================
+def generar_fondo_is_lm(is_shift=0, lm_shift=0):
     fig, ax = plt.subplots(figsize=(10, 5.6))
-    configurar_ejes(ax, 'Ingreso / Producto (Y)', 'Tasa de Interés (r)', 'Modelo IS-LM (Keynesiano)')
+    configurar_ejes(ax, 'Ingreso / Producto (Y)', 'Tasa de Interés (r)', 'Modelo IS-LM (Interactivo)')
     x = np.linspace(1, 9, 100)
-    ax.plot(x, 8 - 0.7*x, 'b-', linewidth=3, label='IS (Bienes)')
-    ax.plot(x, 1 + 0.8*x, 'r-', linewidth=3, label='LM (Dinero)')
-    ax.plot(4.1, 4.3, 'ko', markersize=10)
-    ax.text(4.3, 4.8, 'Equilibrio', fontsize=12, fontweight='bold')
+    ax.plot(x, (8 + is_shift) - 0.7*x, 'b-', linewidth=3, label='IS (Bienes)')
+    ax.plot(x, (1 + lm_shift) + 0.8*x, 'r-', linewidth=3, label='LM (Dinero)')
+    
+    # Punto de equilibrio dinámico
+    x_eq = (7 + is_shift - lm_shift) / 1.5
+    if 0 <= x_eq <= 10:
+        y_eq = (1 + lm_shift) + 0.8 * x_eq
+        ax.plot(x_eq, y_eq, 'ko', markersize=10)
+        ax.text(x_eq + 0.2, y_eq + 0.5, 'Equilibrio', fontsize=12, fontweight='bold')
     ax.legend(loc='upper right', fontsize=12)
     return fig_to_image(fig)
 
-def generar_fondo_oa_da():
+def generar_fondo_oa_da(da_shift=0, oa_shift=0):
     fig, ax = plt.subplots(figsize=(10, 5.6))
-    configurar_ejes(ax, 'Producto Real (Y)', 'Nivel de Precios (P)', 'Oferta y Demanda Agregada (OA-DA)')
+    configurar_ejes(ax, 'Producto Real (Y)', 'Nivel de Precios (P)', 'Oferta y Demanda Agregada (Interactivo)')
     x = np.linspace(1, 9, 100)
-    ax.plot(x, 9 - 0.8*x, 'b-', linewidth=3, label='Demanda Agregada (DA)')
-    ax.plot(x, 1 + 0.8*x, 'r-', linewidth=3, label='Oferta Agregada (OACP)')
-    ax.plot(5, 5, 'ko', markersize=10)
-    ax.text(5.2, 5.3, 'Equilibrio', fontsize=12, fontweight='bold')
+    ax.plot(x, (9 + da_shift) - 0.8*x, 'b-', linewidth=3, label='Demanda Agregada (DA)')
+    ax.plot(x, (1 + oa_shift) + 0.8*x, 'r-', linewidth=3, label='Oferta Agregada (OACP)')
+    
+    x_eq = (8 + da_shift - oa_shift) / 1.6
+    if 0 <= x_eq <= 10:
+        y_eq = (1 + oa_shift) + 0.8 * x_eq
+        ax.plot(x_eq, y_eq, 'ko', markersize=10)
+        ax.text(x_eq + 0.2, y_eq + 0.5, 'Equilibrio', fontsize=12, fontweight='bold')
     ax.legend(loc='upper right', fontsize=12)
     return fig_to_image(fig)
 
-def generar_fondo_phillips():
+def generar_fondo_phillips(inflacion_esperada=1):
     fig, ax = plt.subplots(figsize=(10, 5.6))
-    configurar_ejes(ax, 'Tasa de Desempleo (u)', 'Tasa de Inflación (π)', 'Curva de Phillips (Corto Plazo)')
+    configurar_ejes(ax, 'Tasa de Desempleo (u)', 'Tasa de Inflación (π)', 'Curva de Phillips (Interactiva)')
     x = np.linspace(1, 9, 100)
-    y = 1 + 8 / x
-    ax.plot(x, y, 'g-', linewidth=3, label='Curva de Phillips')
-    ax.plot(4, 3, 'ko', markersize=10)
-    ax.text(4.2, 3.5, 'Punto A', fontsize=12, fontweight='bold')
+    y = inflacion_esperada + 8 / x
+    ax.plot(x, y, 'g-', linewidth=3, label=f'Curva de Phillips (πe={inflacion_esperada})')
+    ax.plot(4, inflacion_esperada + 2, 'ko', markersize=10)
+    ax.text(4.2, inflacion_esperada + 2.5, 'Punto A', fontsize=12, fontweight='bold')
     ax.legend(loc='upper right', fontsize=12)
     return fig_to_image(fig)
 
-def generar_fondo_fpp():
+def generar_fondo_fpp(recursos_x=10, recursos_y=10):
     fig, ax = plt.subplots(figsize=(10, 5.6))
-    configurar_ejes(ax, 'Bien X (Ej. Alimentos)', 'Bien Y (Ej. Manufactura)', 'Frontera de Posibilidades de Producción (FPP)')
-    x = np.linspace(0, 10, 100)
-    y = np.sqrt(100 - x**2)
-    ax.plot(x, y, 'purple', linewidth=3, label='FPP')
-    ax.plot(3, 3, 'ro', markersize=8, label='Ineficiente')
-    ax.plot(7, 7, 'bx', markersize=10, markeredgewidth=3, label='Inalcanzable')
+    configurar_ejes(ax, 'Bien X (Ej. Alimentos)', 'Bien Y (Ej. Manufactura)', 'Frontera de Posibilidades de Producción')
+    x = np.linspace(0, recursos_x, 100)
+    y = recursos_y * np.sqrt(1 - (x/recursos_x)**2)
+    ax.plot(x, y, 'purple', linewidth=3, label=f'FPP (Recursos={recursos_x}x{recursos_y})')
     ax.legend(loc='upper right', fontsize=12)
     return fig_to_image(fig)
 
-def generar_fondo_monopolio():
+def generar_fondo_monopolio(demand_shift=0, mc_shift=0):
     fig, ax = plt.subplots(figsize=(10, 5.6))
-    configurar_ejes(ax, 'Cantidad (Q)', 'Precio / Costo (P, C)', 'Monopolio vs. Competencia Perfecta')
+    configurar_ejes(ax, 'Cantidad (Q)', 'Precio / Costo (P, C)', 'Monopolio (Interactivo)')
     x = np.linspace(0.1, 9, 100)
-    ax.plot(x, 10 - x, 'b-', linewidth=3, label='Demanda (D)')
-    ax.plot(x, 10 - 2*x, 'b--', linewidth=2, label='Ingreso Marginal (IMg)')
-    ax.plot(x, 2 + 0.5*x, 'r-', linewidth=3, label='Costo Marginal (CMg)')
-    q_eq = 3.2
-    p_eq = 10 - q_eq
-    ax.axvline(q_eq, color='gray', linestyle=':', linewidth=1.5)
-    ax.axhline(p_eq, color='gray', linestyle=':', linewidth=1.5)
-    ax.plot(q_eq, p_eq, 'ko', markersize=10)
-    ax.text(q_eq + 0.2, p_eq + 0.5, 'Equilibrio\nMonopólico', fontsize=11, fontweight='bold')
+    ax.plot(x, (10 + demand_shift) - x, 'b-', linewidth=3, label='Demanda (D)')
+    ax.plot(x, (10 + demand_shift) - 2*x, 'b--', linewidth=2, label='Ingreso Marginal (IMg)')
+    ax.plot(x, (2 + mc_shift) + 0.5*x, 'r-', linewidth=3, label='Costo Marginal (CMg)')
+    
+    # Equilibrio dinámico IMg = CMg
+    q_eq = (8 + demand_shift - mc_shift) / 2.5
+    if 0 <= q_eq <= 10:
+        p_eq = (10 + demand_shift) - q_eq
+        ax.axvline(q_eq, color='gray', linestyle=':', linewidth=1.5)
+        ax.axhline(p_eq, color='gray', linestyle=':', linewidth=1.5)
+        ax.plot(q_eq, p_eq, 'ko', markersize=10)
+        ax.text(q_eq + 0.2, p_eq + 0.5, 'Eq. Monopólico', fontsize=11, fontweight='bold')
     ax.legend(loc='upper right', fontsize=11)
     return fig_to_image(fig)
 
-def generar_fondo_krugman():
+def generar_fondo_krugman(cc_shift=0, pp_shift=0):
     fig, ax = plt.subplots(figsize=(10, 5.6))
     configurar_ejes(ax, 'Escala de Producción (Q)', 'Precio / Costo (P/C)', 'Nueva Teoría Comercio (Krugman)')
     x = np.linspace(1, 9, 100)
-    ax.plot(x, 9/x + 1, 'g-', linewidth=3, label='Costo Medio (CC)')
-    ax.plot(x, 10 - 0.8*x, 'm-', linewidth=3, label='Precio (PP)')
+    ax.plot(x, (9 + cc_shift)/x + 1, 'g-', linewidth=3, label='Costo Medio (CC)')
+    ax.plot(x, (10 + pp_shift) - 0.8*x, 'm-', linewidth=3, label='Precio (PP)')
     ax.plot(3.5, 3.6, 'ko', markersize=10)
     ax.text(3.7, 4.0, 'Equilibrio', fontsize=12, fontweight='bold')
     ax.legend(loc='upper right', fontsize=12)
     return fig_to_image(fig)
 
-def generar_fondo_enfermedad_holandesa():
+def generar_fondo_enfermedad_holandesa(intensidad_auge=1.5):
     fig, ax = plt.subplots(figsize=(10, 5.6))
-    configurar_ejes(ax, 'Tiempo (t)', 'Tipo de Cambio Real (TCR)', 'Enfermedad Holandesa (Colombia)')
+    configurar_ejes(ax, 'Tiempo (t)', 'Tipo de Cambio Real (TCR)', 'Enfermedad Holandesa (Interactiva)')
     x = np.linspace(0, 9, 100)
     y1 = 3 + 0.2*x
-    y2 = np.where(x < 4, 3 + 0.2*x, 3 + 0.2*4 + 1.5 + 0.1*(x-4))
+    y2 = np.where(x < 4, 3 + 0.2*x, 3 + 0.2*4 + intensidad_auge + 0.1*(x-4))
     ax.plot(x, y1, 'b--', linewidth=2, label='Tendencia Inicial')
-    ax.plot(x, y2, 'r-', linewidth=3, label='Auge Materias Primas')
+    ax.plot(x, y2, 'r-', linewidth=3, label=f'Auge Materias Primas (Intensidad={intensidad_auge})')
     ax.axvline(4, color='gray', linestyle=':', linewidth=2)
     ax.text(4.1, 8, 'Boom Precios', fontsize=11, color='red', fontweight='bold')
     ax.legend(loc='upper left', fontsize=12)
@@ -145,6 +158,7 @@ def generar_fondo_blanco():
 # ==========================================
 st.title("📊 Pizarra Económica Interactiva")
 
+# 1. Selección de Modelo y Herramientas de Dibujo
 col1, col2, col3, col4, col5 = st.columns([3, 2, 2, 2, 2])
 
 with col1:
@@ -168,24 +182,61 @@ with col5:
     if st.button("️ Limpiar Pizarra", type="primary"):
         st.session_state["canvas_key"] = st.session_state.get("canvas_key", 0) + 1
 
+# 2. Parámetros Interactivos Dinámicos
+st.markdown("---")
+st.markdown("### 📈 Ajustar Parámetros del Modelo (Mueve las curvas para explicar)")
+
+# Variables por defecto
+is_shift = 0; lm_shift = 0; da_shift = 0; oa_shift = 0
+inflacion_esp = 1; rec_x = 10; rec_y = 10
+dem_shift = 0; mc_shift = 0; cc_shift = 0; pp_shift = 0
+intensidad = 1.5
+
+if modelo == "IS-LM (Keynesiano)":
+    c1, c2 = st.columns(2)
+    with c1: is_shift = st.slider("🔴 Política Fiscal (Desplazar curva IS)", -3.0, 3.0, 0.0, 0.1, help="Subir: Expansión fiscal. Bajar: Contracción fiscal.")
+    with c2: lm_shift = st.slider("🔵 Política Monetaria (Desplazar curva LM)", -3.0, 3.0, 0.0, 0.1, help="Subir: Expansión monetaria. Bajar: Contracción monetaria.")
+
+elif modelo == "OA-DA (Agregado)":
+    c1, c2 = st.columns(2)
+    with c1: da_shift = st.slider("🔴 Choque de Demanda Agregada", -3.0, 3.0, 0.0, 0.1)
+    with c2: oa_shift = st.slider("🔵 Choque de Oferta Agregada", -3.0, 3.0, 0.0, 0.1)
+
+elif modelo == "Curva de Phillips":
+    inflacion_esp = st.slider("Inflación Esperada (πe)", 0.0, 4.0, 1.0, 0.1, help="Sube la curva completa si la inflación esperada aumenta.")
+
+elif modelo == "Frontera Posibilidades Producción":
+    c1, c2 = st.columns(2)
+    with c1: rec_x = st.slider("Recursos/Tecnología para Bien X", 2, 12, 10)
+    with c2: rec_y = st.slider("Recursos/Tecnología para Bien Y", 2, 12, 10)
+
+elif modelo == "Monopolio":
+    c1, c2 = st.columns(2)
+    with c1: dem_shift = st.slider("🔴 Cambio en Demanda", -3.0, 3.0, 0.0, 0.1)
+    with c2: mc_shift = st.slider("🔵 Cambio en Costos Marginales (Impuestos/Insumos)", -2.0, 4.0, 0.0, 0.1)
+
+elif modelo == "Krugman (Comercio)":
+    c1, c2 = st.columns(2)
+    with c1: cc_shift = st.slider("Costos Medios (Economías de Escala)", -3.0, 3.0, 0.0, 0.1)
+    with c2: pp_shift = st.slider("Precio de Mercado (Competencia)", -3.0, 3.0, 0.0, 0.1)
+
+elif modelo == "Enfermedad Holandesa":
+    intensidad = st.slider("Intensidad del Boom de Materias Primas", 0.0, 4.0, 1.5, 0.1)
+
+st.markdown("---")
+
 # ==========================================
 # LÓGICA DEL FONDO Y RENDERIZADO
 # ==========================================
-mapa_modelos = {
-    "Pizarra en Blanco": generar_fondo_blanco,
-    "IS-LM (Keynesiano)": generar_fondo_is_lm,
-    "OA-DA (Agregado)": generar_fondo_oa_da,
-    "Curva de Phillips": generar_fondo_phillips,
-    "Frontera Posibilidades Producción": generar_fondo_fpp,
-    "Monopolio": generar_fondo_monopolio,
-    "Krugman (Comercio)": generar_fondo_krugman,
-    "Enfermedad Holandesa": generar_fondo_enfermedad_holandesa
-}
+if modelo == "IS-LM (Keynesiano)": bg_image = generar_fondo_is_lm(is_shift, lm_shift)
+elif modelo == "OA-DA (Agregado)": bg_image = generar_fondo_oa_da(da_shift, oa_shift)
+elif modelo == "Curva de Phillips": bg_image = generar_fondo_phillips(inflacion_esp)
+elif modelo == "Frontera Posibilidades Producción": bg_image = generar_fondo_fpp(rec_x, rec_y)
+elif modelo == "Monopolio": bg_image = generar_fondo_monopolio(dem_shift, mc_shift)
+elif modelo == "Krugman (Comercio)": bg_image = generar_fondo_krugman(cc_shift, pp_shift)
+elif modelo == "Enfermedad Holandesa": bg_image = generar_fondo_enfermedad_holandesa(intensidad)
+else: bg_image = generar_fondo_blanco()
 
-# Obtenemos la imagen PIL
-bg_image = mapa_modelos[modelo]()
-
-# Lienzo
 canvas_result = st_canvas(
     fill_color="rgba(255, 165, 0, 0.3)",
     stroke_width=stroke_width,
@@ -196,14 +247,12 @@ canvas_result = st_canvas(
     height=700,
     width=1200,
     update_streamlit=True,
-    return_image_data=True,  # <--- ESTA ES LA LÍNEA QUE FALTABA
+    return_image_data=True,
 )
 
-# Botón de descarga CORREGIDO
+# Botón de descarga
 if canvas_result.image_data is not None and canvas_result.image_data.any():
     st.markdown("---")
-    
-    # Corrección: Convertir el arreglo numpy de vuelta a bytes PNG
     img_array = canvas_result.image_data.astype(np.uint8)
     pil_img = Image.fromarray(img_array)
     buf = io.BytesIO()
