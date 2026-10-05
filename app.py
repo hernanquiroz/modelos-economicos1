@@ -27,6 +27,14 @@ st.markdown("""
         height: 40px;
         font-size: 16px;
     }
+    /* Estilo para la leyenda pequeña */
+    .leyenda-pie {
+        text-align: center;
+        font-size: 11px;
+        color: #666;
+        margin-top: 20px;
+        font-family: sans-serif;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -262,3 +270,8 @@ if canvas_result.image_data is not None and canvas_result.image_data.any():
     b64 = base64.b64encode(img_bytes).decode()
     href = f'<a href="data:image/png;base64,{b64}" download="pizarra_{modelo.replace(" ", "_")}.png" style="font-size: 18px; padding: 10px; background-color: #007BFF; color: white; text-decoration: none; border-radius: 5px;">📥 Descargar Pizarra en PNG</a>'
     st.markdown(href, unsafe_allow_html=True)
+
+# ==========================================
+# LEYENDA DE CRÉDITOS
+# ==========================================
+st.markdown('<div class="leyenda-pie">Pizarra diseñada por Ing. Hernán Quiroz</div>', unsafe_allow_html=True)
