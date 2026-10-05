@@ -326,7 +326,6 @@ canvas_result = st_canvas(
     width=1200,
     update_streamlit=True,
     return_image_data=True,
-    display_toolbar=False, # <--- Oculta la pequeña barra de herramientas del lienzo
 )
 
 if canvas_result.image_data is not None and canvas_result.image_data.any():
