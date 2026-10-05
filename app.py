@@ -248,10 +248,19 @@ with col2:
     stroke_color = st.color_picker("Color:", "#000000")
 
 with col3:
-    stroke_width = st.slider("Grosor:", 1, 20, 5)
+    stroke_width = st.slider("Grosor:", 1, 40, 5, help="Controla el grosor del lápiz y el tamaño del borrador.")
 
 with col4:
-    drawing_mode = st.selectbox("Herramienta:", ("freedraw", "eraser", "transform"))
+    # --- MENÚ DE HERRAMIENTAS ACTUALIZADO Y EN ESPAÑOL ---
+    herramienta_opcion = st.selectbox("Herramienta:", ("✏️ Lápiz (Dibujar)", "🧽 Borrador", "↔️ Mover Trazos"))
+    
+    # Mapeo de la opción seleccionada al parámetro que entiende la librería
+    modo_map = {
+        "✏️ Lápiz (Dibujar)": "freedraw",
+        "🧽 Borrador": "eraser",
+        "↔️ Mover Trazos": "transform"
+    }
+    drawing_mode = modo_map[herramienta_opcion]
 
 with col5:
     st.markdown("<br>", unsafe_allow_html=True)
@@ -320,7 +329,7 @@ canvas_result = st_canvas(
     stroke_width=stroke_width,
     stroke_color=stroke_color,
     background_image=bg_image,
-    drawing_mode=drawing_mode,
+    drawing_mode=drawing_mode, # Usa el modo mapeado (freedraw, eraser, transform)
     key=f"canvas_{st.session_state.get('canvas_key', 0)}",
     height=700,
     width=1200,
