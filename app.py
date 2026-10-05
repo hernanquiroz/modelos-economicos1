@@ -9,7 +9,7 @@ from PIL import Image
 # --- Configuración de la página ---
 st.set_page_config(page_title="Pizarra Económica Interactiva", layout="wide", initial_sidebar_state="collapsed")
 
-# --- CSS "Caza-Todo" para limpiar la interfaz pública ---
+# --- CSS Definitivo (Streamlit Limpio) ---
 st.markdown("""
     <style>
     .block-container {
@@ -22,36 +22,25 @@ st.markdown("""
         -ms-touch-action: none;
     }
     
-    /* 1. Ocultar menús, headers y footers normales */
-    #MainMenu, footer, header, 
-    [data-testid="stMainMenu"], [data-testid="stHeader"], 
-    [data-testid="stToolbar"], [data-testid="stStatusWidget"], 
-    .stDeployButton, [data-testid="stFloatingActionButton"], 
-    div[data-testid="stMainMenu"] {
+    /* Ocultar el menú principal y la nube de Streamlit */
+    #MainMenu {visibility: hidden;}
+    [data-testid="stMainMenu"] {visibility: hidden;}
+    [data-testid="stHeader"] {visibility: hidden;}
+    [data-testid="stToolbar"] {visibility: hidden;}
+    [data-testid="stStatusWidget"] {visibility: hidden;}
+    [data-testid="stAppViewBlockContainer"] {visibility: hidden;}
+    
+    /* Ocultar el botón flotante de menú de Streamlit */
+    [data-testid="stFloatingActionButton"] {
         visibility: hidden !important;
         display: none !important;
-        height: 0 !important;
-        width: 0 !important;
-        pointer-events: none !important;
-    }
-
-    /* 2. Cazar específicamente el botón flotante de Streamlit Cloud (Flechas naranjas) */
-    a[href*="streamlit.io"], 
-    a[href*="github.com/streamlit"], 
-    [data-testid="stCloudToolbar"], 
-    .stCloudToolbar, 
-    #st-cloud-toolbar, 
-    [data-testid="stAppCloudToolbar"],
-    /* Cazar por posición fija en la esquina inferior derecha */
-    div[style*="position: fixed"], 
-    button[style*="position: fixed"],
-    iframe[style*="position: fixed"] {
-        visibility: hidden !important;
-        display: none !important;
-        pointer-events: none !important;
-        bottom: -100px !important; /* Lo enviamos lejos de la pantalla */
         right: -100px !important;
+        bottom: -100px !important;
     }
+    
+    /* Ocultar el footer de Streamlit Cloud */
+    footer {visibility: hidden;}
+    [data-testid="stFooter"] {visibility: hidden;}
     
     .stButton>button {
         width: 100%;
@@ -64,6 +53,7 @@ st.markdown("""
         color: #666;
         margin-top: 20px;
         font-family: sans-serif;
+        visibility: visible !important; /* Asegura que tu leyenda sí se vea */
     }
     </style>
 """, unsafe_allow_html=True)
