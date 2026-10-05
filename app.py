@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import io
 import numpy as np
 import base64
+from PIL import Image  # ¡NUEVA IMPORTACIÓN REQUERIDA!
 
 # --- Configuración de la página ---
 st.set_page_config(page_title="Pizarra Económica Interactiva", layout="wide", initial_sidebar_state="collapsed")
@@ -32,11 +33,12 @@ st.markdown("""
 # ==========================================
 # FUNCIONES DE GENERACIÓN DE FONDOS (16:9)
 # ==========================================
-def fig_to_bytes(fig):
+# CORRECCIÓN: Ahora devolvemos un objeto PIL.Image en lugar de bytes
+def fig_to_image(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
     buf.seek(0)
-    return buf.getvalue()
+    return Image.open(buf)
 
 def configurar_ejes(ax, xlabel, ylabel, title):
     ax.set_xlim(0, 10)
@@ -57,7 +59,7 @@ def generar_fondo_is_lm():
     ax.plot(4.1, 4.3, 'ko', markersize=10)
     ax.text(4.3, 4.8, 'Equilibrio', fontsize=12, fontweight='bold')
     ax.legend(loc='upper right', fontsize=12)
-    return fig_to_bytes(fig)
+    return fig_to_image(fig)
 
 def generar_fondo_oa_da():
     fig, ax = plt.subplots(figsize=(10, 5.6))
@@ -68,7 +70,7 @@ def generar_fondo_oa_da():
     ax.plot(5, 5, 'ko', markersize=10)
     ax.text(5.2, 5.3, 'Equilibrio', fontsize=12, fontweight='bold')
     ax.legend(loc='upper right', fontsize=12)
-    return fig_to_bytes(fig)
+    return fig_to_image(fig)
 
 def generar_fondo_phillips():
     fig, ax = plt.subplots(figsize=(10, 5.6))
@@ -79,7 +81,7 @@ def generar_fondo_phillips():
     ax.plot(4, 3, 'ko', markersize=10)
     ax.text(4.2, 3.5, 'Punto A', fontsize=12, fontweight='bold')
     ax.legend(loc='upper right', fontsize=12)
-    return fig_to_bytes(fig)
+    return fig_to_image(fig)
 
 def generar_fondo_fpp():
     fig, ax = plt.subplots(figsize=(10, 5.6))
@@ -90,7 +92,7 @@ def generar_fondo_fpp():
     ax.plot(3, 3, 'ro', markersize=8, label='Ineficiente')
     ax.plot(7, 7, 'bx', markersize=10, markeredgewidth=3, label='Inalcanzable')
     ax.legend(loc='upper right', fontsize=12)
-    return fig_to_bytes(fig)
+    return fig_to_image(fig)
 
 def generar_fondo_monopolio():
     fig, ax = plt.subplots(figsize=(10, 5.6))
@@ -99,7 +101,6 @@ def generar_fondo_monopolio():
     ax.plot(x, 10 - x, 'b-', linewidth=3, label='Demanda (D)')
     ax.plot(x, 10 - 2*x, 'b--', linewidth=2, label='Ingreso Marginal (IMg)')
     ax.plot(x, 2 + 0.5*x, 'r-', linewidth=3, label='Costo Marginal (CMg)')
-    
     q_eq = 3.2
     p_eq = 10 - q_eq
     ax.axvline(q_eq, color='gray', linestyle=':', linewidth=1.5)
@@ -107,7 +108,7 @@ def generar_fondo_monopolio():
     ax.plot(q_eq, p_eq, 'ko', markersize=10)
     ax.text(q_eq + 0.2, p_eq + 0.5, 'Equilibrio\nMonopólico', fontsize=11, fontweight='bold')
     ax.legend(loc='upper right', fontsize=11)
-    return fig_to_bytes(fig)
+    return fig_to_image(fig)
 
 def generar_fondo_krugman():
     fig, ax = plt.subplots(figsize=(10, 5.6))
@@ -118,7 +119,7 @@ def generar_fondo_krugman():
     ax.plot(3.5, 3.6, 'ko', markersize=10)
     ax.text(3.7, 4.0, 'Equilibrio', fontsize=12, fontweight='bold')
     ax.legend(loc='upper right', fontsize=12)
-    return fig_to_bytes(fig)
+    return fig_to_image(fig)
 
 def generar_fondo_enfermedad_holandesa():
     fig, ax = plt.subplots(figsize=(10, 5.6))
@@ -131,14 +132,14 @@ def generar_fondo_enfermedad_holandesa():
     ax.axvline(4, color='gray', linestyle=':', linewidth=2)
     ax.text(4.1, 8, 'Boom Precios', fontsize=11, color='red', fontweight='bold')
     ax.legend(loc='upper left', fontsize=12)
-    return fig_to_bytes(fig)
+    return fig_to_image(fig)
 
 def generar_fondo_blanco():
     fig, ax = plt.subplots(figsize=(10, 5.6))
     ax.set_xlim(0, 10)
     ax.set_ylim(0, 10)
     ax.axis('off')
-    return fig_to_bytes(fig)
+    return fig_to_image(fig)
 
 # ==========================================
 # INTERFAZ DE USUARIO
@@ -182,9 +183,10 @@ mapa_modelos = {
     "Enfermedad Holandesa": generar_fondo_enfermedad_holandesa
 }
 
+# Obtenemos la imagen PIL
 bg_image = mapa_modelos[modelo]()
 
-# ✅ CORREGIDO: Se eliminó display_toolbar y se usaron solo parámetros válidos
+# Lienzo
 canvas_result = st_canvas(
     fill_color="rgba(255, 165, 0, 0.3)",
     stroke_width=stroke_width,
@@ -197,10 +199,17 @@ canvas_result = st_canvas(
     update_streamlit=True,
 )
 
-# Botón de descarga
+# Botón de descarga CORREGIDO
 if canvas_result.image_data is not None and canvas_result.image_data.any():
     st.markdown("---")
-    img_bytes = canvas_result.image_data
+    
+    # Corrección: Convertir el arreglo numpy de vuelta a bytes PNG
+    img_array = canvas_result.image_data.astype(np.uint8)
+    pil_img = Image.fromarray(img_array)
+    buf = io.BytesIO()
+    pil_img.save(buf, format="PNG")
+    img_bytes = buf.getvalue()
+    
     b64 = base64.b64encode(img_bytes).decode()
     href = f'<a href="data:image/png;base64,{b64}" download="pizarra_{modelo.replace(" ", "_")}.png" style="font-size: 18px; padding: 10px; background-color: #007BFF; color: white; text-decoration: none; border-radius: 5px;">📥 Descargar Pizarra en PNG</a>'
     st.markdown(href, unsafe_allow_html=True)
