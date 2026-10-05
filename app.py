@@ -21,7 +21,11 @@ st.markdown("""
         touch-action: none;
         -ms-touch-action: none;
     }
-    #MainMenu, footer, header {visibility: hidden;}
+    /* Ocultar TODOS los elementos nativos de Streamlit (Menú, Footer, Flechas) */
+    #MainMenu, footer, header, #stDecoration, [data-testid="stToolbar"], .stDeployButton {
+        visibility: hidden !important;
+        display: none !important;
+    }
     .stButton>button {
         width: 100%;
         height: 40px;
@@ -57,7 +61,7 @@ def configurar_ejes(ax, xlabel, ylabel, title):
     ax.grid(True, linestyle='--', alpha=0.4)
 
 # ==========================================
-# MODELOS INTERACTIVOS ANTERIORES
+# MODELOS INTERACTIVOS
 # ==========================================
 def generar_fondo_is_lm(is_shift=0, lm_shift=0):
     fig, ax = plt.subplots(figsize=(10, 5.6))
@@ -156,21 +160,18 @@ def generar_fondo_blanco():
     return fig_to_image(fig)
 
 # ==========================================
-# NUEVO MODELO: KRUGMAN 4 CUADRANTES
+# MODELO: KRUGMAN 4 CUADRANTES
 # ==========================================
 def generar_fondo_krugman_4q(shock_monetario=0):
     fig, axs = plt.subplots(2, 2, figsize=(12, 6.5))
     fig.suptitle('Modelo de Krugman: Ajuste de Activos y Precios (4 Cuadrantes)', fontsize=16, fontweight='bold', y=0.98)
     
-    # Lógica de variables según el shock (0 es equilibrio base)
-    # shock > 0 (expansivo) -> r baja, E sube (dolar sube), inflacion sube, M/P cae
-    # shock < 0 (contractivo) -> r sube, E baja (dolar baja), inflacion baja, M/P sube
     r_base = 5 - shock_monetario * 1.5
     E_base = 5 + shock_monetario * 1.5
     inflacion = 5 + shock_monetario * 1.5
     saldos_reales = 5 - shock_monetario * 1.5
     
-    # --- Q1: Mercado de Divisas (Arriba Derecha) ---
+    # Q1
     ax1 = axs[0, 1]
     x1 = np.linspace(1, 10, 100)
     ax1.plot(x1, 10 - 0.8 * x1, 'g-', linewidth=2, label='Rendimiento Esperado')
@@ -180,7 +181,7 @@ def generar_fondo_krugman_4q(shock_monetario=0):
     ax1.set_xlabel('Tipo de Cambio (E) [$ sube ->]', fontsize=9)
     ax1.set_ylabel('Rendim. Moneda Local', fontsize=9)
     
-    # --- Q2: Mercado Monetario (Arriba Izquierda) ---
+    # Q2
     ax2 = axs[0, 0]
     x2 = np.linspace(1, 10, 100)
     ax2.plot(x2, 10 - 0.8 * x2, 'b-', linewidth=2, label='Demanda de Dinero L(r)')
@@ -190,7 +191,7 @@ def generar_fondo_krugman_4q(shock_monetario=0):
     ax2.set_xlabel('Saldos Reales (M/P)', fontsize=9)
     ax2.set_ylabel('Tasa de Interés (r)', fontsize=9)
     
-    # --- Q3: Transmisión de Precios (Abajo Izquierda) ---
+    # Q3
     ax3 = axs[1, 0]
     x3 = np.linspace(1, 10, 100)
     ax3.plot(x3, 10 - 0.8 * x3, 'm-', linewidth=2, label='Precios vs Saldos Reales')
@@ -199,7 +200,7 @@ def generar_fondo_krugman_4q(shock_monetario=0):
     ax3.set_xlabel('Nivel de Precios / Inflación (P)', fontsize=9)
     ax3.set_ylabel('Saldos Reales (M/P)', fontsize=9)
     
-    # --- Q4: Inflación y Tipo de Cambio (Abajo Derecha) ---
+    # Q4
     ax4 = axs[1, 1]
     x4 = np.linspace(1, 10, 100)
     ax4.plot(x4, 1 + 8/x4, 'c-', linewidth=2, label='Inflación vs T. Cambio')
@@ -208,26 +209,20 @@ def generar_fondo_krugman_4q(shock_monetario=0):
     ax4.set_xlabel('Tipo de Cambio (E)', fontsize=9)
     ax4.set_ylabel('Inflación (π)', fontsize=9)
     
-    # Formateo de los ejes
     for ax in [ax1, ax2, ax3, ax4]:
         ax.set_xlim(0, 10)
         ax.set_ylim(0, 10)
         ax.grid(True, linestyle='--', alpha=0.4)
         ax.legend(loc='upper right', fontsize=8)
         
-    # Flechas de ajuste dinámico
     color_flecha = 'red' if shock_monetario > 0 else 'blue' if shock_monetario < 0 else 'gray'
     if shock_monetario != 0:
-        # Q2
         ax2.annotate('Interés ' + ('Baja' if shock_monetario > 0 else 'Sube'), xy=(saldos_reales, r_base), xytext=(saldos_reales+2, r_base+2),
                      arrowprops=dict(arrowstyle='->', color=color_flecha), fontsize=9, color=color_flecha, fontweight='bold')
-        # Q1
         ax1.annotate('Dólar ' + ('Sube' if shock_monetario > 0 else 'Baja'), xy=(E_base, r_base), xytext=(E_base-2, r_base+2),
                      arrowprops=dict(arrowstyle='->', color=color_flecha), fontsize=9, color=color_flecha, fontweight='bold')
-        # Q3
         ax3.annotate('Saldos ' + ('Caen' if shock_monetario > 0 else 'Suben'), xy=(inflacion, 10 - 0.8*inflacion), xytext=(inflacion+1, 10 - 0.8*inflacion+2),
                      arrowprops=dict(arrowstyle='->', color=color_flecha), fontsize=9, color=color_flecha, fontweight='bold')
-        # Q4
         ax4.annotate('Inflación ' + ('Sube' if shock_monetario > 0 else 'Baja'), xy=(E_base, 1 + 8/E_base), xytext=(E_base-2, 1 + 8/E_base+2),
                      arrowprops=dict(arrowstyle='->', color=color_flecha), fontsize=9, color=color_flecha, fontweight='bold')
         
@@ -303,7 +298,7 @@ elif modelo == "Enfermedad Holandesa":
     intensidad = st.slider("Intensidad del Boom de Materias Primas", 0.0, 4.0, 1.5, 0.1)
 
 elif modelo == "Krugman 4 Cuadrantes (T.Cambio/Inflación)":
-    shock_mon = st.slider("🔴 Política Monetaria (Subir: Expansiva / Bajar: Contractiva)", -3.0, 3.0, 0.0, 0.1, help="Subir: El dólar sube y la inflación sube. Bajar: El dólar baja y la inflación baja.")
+    shock_mon = st.slider("🔴 Política Monetaria (Subir: Expansiva / Bajar: Contractiva)", -3.0, 3.0, 0.0, 0.1)
 
 st.markdown("---")
 
@@ -331,6 +326,7 @@ canvas_result = st_canvas(
     width=1200,
     update_streamlit=True,
     return_image_data=True,
+    display_toolbar=False, # <--- Oculta la pequeña barra de herramientas del lienzo
 )
 
 if canvas_result.image_data is not None and canvas_result.image_data.any():
