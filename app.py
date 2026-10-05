@@ -9,7 +9,7 @@ from PIL import Image
 # --- Configuración de la página ---
 st.set_page_config(page_title="Pizarra Económica Interactiva", layout="wide", initial_sidebar_state="collapsed")
 
-# --- CSS Definitivo (Streamlit Limpio) ---
+# --- CSS Definitivo (Modo Quirófano) ---
 st.markdown("""
     <style>
     .block-container {
@@ -22,25 +22,41 @@ st.markdown("""
         -ms-touch-action: none;
     }
     
-    /* Ocultar el menú principal y la nube de Streamlit */
-    #MainMenu {visibility: hidden;}
-    [data-testid="stMainMenu"] {visibility: hidden;}
-    [data-testid="stHeader"] {visibility: hidden;}
-    [data-testid="stToolbar"] {visibility: hidden;}
-    [data-testid="stStatusWidget"] {visibility: hidden;}
-    [data-testid="stAppViewBlockContainer"] {visibility: hidden;}
+    /* 1. Ocultar TODOS los menús y cabeceras nativos de Streamlit */
+    #MainMenu, 
+    header, 
+    footer, 
+    [data-testid="stHeader"], 
+    [data-testid="stToolbar"], 
+    [data-testid="stStatusWidget"],
+    [data-testid="stAppViewBlockContainer"],
     
-    /* Ocultar el botón flotante de menú de Streamlit */
-    [data-testid="stFloatingActionButton"] {
+    /* 2. Ocultar el NUEVO menú principal de Streamlit (ahora abajo a la derecha) */
+    [data-testid="stMainMenu"], 
+    [data-testid="stMainMenuButton"],
+    [data-testid="stMainMenuAvatar"],
+    [data-testid="stMainMenuList"],
+    [data-testid="stMainMenuOpen"],
+    
+    /* 3. Ocultar el botón de la nube de Streamlit Cloud */
+    [data-testid="stCloudToolbar"],
+    .stCloudToolbar,
+    #st-cloud-toolbar,
+    [data-testid="stAppCloudToolbar"],
+    [data-testid="stFloatingActionButton"],
+    
+    /* 4. Trampa para cualquier botón flotante (por posición CSS) */
+    button[style*="position: fixed"],
+    div[style*="position: fixed"][style*="bottom"],
+    iframe[style*="position: fixed"] {
         visibility: hidden !important;
         display: none !important;
-        right: -100px !important;
-        bottom: -100px !important;
+        height: 0 !important;
+        width: 0 !important;
+        pointer-events: none !important;
+        right: -1000px !important; /* Lo arrojamos fuera de la pantalla */
+        bottom: -1000px !important;
     }
-    
-    /* Ocultar el footer de Streamlit Cloud */
-    footer {visibility: hidden;}
-    [data-testid="stFooter"] {visibility: hidden;}
     
     .stButton>button {
         width: 100%;
@@ -53,7 +69,8 @@ st.markdown("""
         color: #666;
         margin-top: 20px;
         font-family: sans-serif;
-        visibility: visible !important; /* Asegura que tu leyenda sí se vea */
+        visibility: visible !important;
+        display: block !important;
     }
     </style>
 """, unsafe_allow_html=True)
