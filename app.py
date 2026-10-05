@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import io
 import numpy as np
 import base64
-from PIL import Image  # ¡NUEVA IMPORTACIÓN REQUERIDA!
+from PIL import Image
 
 # --- Configuración de la página ---
 st.set_page_config(page_title="Pizarra Económica Interactiva", layout="wide", initial_sidebar_state="collapsed")
@@ -33,7 +33,6 @@ st.markdown("""
 # ==========================================
 # FUNCIONES DE GENERACIÓN DE FONDOS (16:9)
 # ==========================================
-# CORRECCIÓN: Ahora devolvemos un objeto PIL.Image en lugar de bytes
 def fig_to_image(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
@@ -197,6 +196,7 @@ canvas_result = st_canvas(
     height=700,
     width=1200,
     update_streamlit=True,
+    return_image_data=True,  # <--- ESTA ES LA LÍNEA QUE FALTABA
 )
 
 # Botón de descarga CORREGIDO
