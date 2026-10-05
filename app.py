@@ -11,21 +11,16 @@ st.set_page_config(page_title="Pizarra Económica Interactiva", layout="wide", i
 # --- CSS para Responsividad, TV y Lápiz Óptico ---
 st.markdown("""
     <style>
-    /* Elimina márgenes y padding para maximizar el área de la TV */
     .block-container {
         padding-top: 1rem;
         padding-bottom: 0;
         max-width: 100%;
     }
-    /* Evita scroll/zoom accidental al usar el dedo o lápiz en la pizarra */
     canvas {
         touch-action: none;
         -ms-touch-action: none;
     }
-    /* Oculta el menú de Streamlit y el footer para pantalla completa */
     #MainMenu, footer, header {visibility: hidden;}
-    
-    /* Estética de los botones para que sean fáciles de tocar con el dedo/lápiz */
     .stButton>button {
         width: 100%;
         height: 40px;
@@ -146,11 +141,10 @@ def generar_fondo_blanco():
     return fig_to_bytes(fig)
 
 # ==========================================
-# INTERFAZ DE USUARIO (BARRA SUPERIOR)
+# INTERFAZ DE USUARIO
 # ==========================================
-st.title(" Pizarra Económica Interactiva")
+st.title("📊 Pizarra Económica Interactiva")
 
-# Controles en columnas para evitar el sidebar (mejor para TVs)
 col1, col2, col3, col4, col5 = st.columns([3, 2, 2, 2, 2])
 
 with col1:
@@ -167,11 +161,11 @@ with col3:
     stroke_width = st.slider("Grosor:", 1, 20, 5)
 
 with col4:
-    drawing_mode = st.selectbox("Herramienta:", ("Lápiz", "Borrador", "Mover/Redimensionar"))
+    drawing_mode = st.selectbox("Herramienta:", ("freedraw", "eraser", "transform"))
 
 with col5:
-    st.markdown("<br>", unsafe_allow_html=True)  # ✅ CORREGIDO
-    if st.button("🗑️ Limpiar Pizarra", type="primary"):
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("️ Limpiar Pizarra", type="primary"):
         st.session_state["canvas_key"] = st.session_state.get("canvas_key", 0) + 1
 
 # ==========================================
@@ -190,20 +184,20 @@ mapa_modelos = {
 
 bg_image = mapa_modelos[modelo]()
 
-# Renderizar el Canvas
+# ✅ CORREGIDO: Se eliminó display_toolbar y se usaron solo parámetros válidos
 canvas_result = st_canvas(
     fill_color="rgba(255, 165, 0, 0.3)",
     stroke_width=stroke_width,
     stroke_color=stroke_color,
     background_image=bg_image,
-    drawing_mode="freedraw" if drawing_mode == "Lápiz" else ("eraser" if drawing_mode == "Borrador" else "transform"),
+    drawing_mode=drawing_mode,
     key=f"canvas_{st.session_state.get('canvas_key', 0)}",
     height=700,
-    use_container_width=True,
-    display_toolbar=False,
+    width=1200,
+    update_streamlit=True,
 )
 
-# Botón de descarga al final
+# Botón de descarga
 if canvas_result.image_data is not None and canvas_result.image_data.any():
     st.markdown("---")
     img_bytes = canvas_result.image_data
