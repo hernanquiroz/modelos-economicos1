@@ -68,9 +68,7 @@ def generar_fondo_oa_da():
     fig, ax = plt.subplots(figsize=(10, 5.6))
     configurar_ejes(ax, 'Producto Real (Y)', 'Nivel de Precios (P)', 'Oferta y Demanda Agregada (OA-DA)')
     x = np.linspace(1, 9, 100)
-    # DA descendente
     ax.plot(x, 9 - 0.8*x, 'b-', linewidth=3, label='Demanda Agregada (DA)')
-    # OA ascendente (Corto Plazo)
     ax.plot(x, 1 + 0.8*x, 'r-', linewidth=3, label='Oferta Agregada (OACP)')
     ax.plot(5, 5, 'ko', markersize=10)
     ax.text(5.2, 5.3, 'Equilibrio', fontsize=12, fontweight='bold')
@@ -81,7 +79,6 @@ def generar_fondo_phillips():
     fig, ax = plt.subplots(figsize=(10, 5.6))
     configurar_ejes(ax, 'Tasa de Desempleo (u)', 'Tasa de Inflación (π)', 'Curva de Phillips (Corto Plazo)')
     x = np.linspace(1, 9, 100)
-    # Curva convexa descendente
     y = 1 + 8 / x
     ax.plot(x, y, 'g-', linewidth=3, label='Curva de Phillips')
     ax.plot(4, 3, 'ko', markersize=10)
@@ -95,9 +92,7 @@ def generar_fondo_fpp():
     x = np.linspace(0, 10, 100)
     y = np.sqrt(100 - x**2)
     ax.plot(x, y, 'purple', linewidth=3, label='FPP')
-    # Punto ineficiente
     ax.plot(3, 3, 'ro', markersize=8, label='Ineficiente')
-    # Punto imposible
     ax.plot(7, 7, 'bx', markersize=10, markeredgewidth=3, label='Inalcanzable')
     ax.legend(loc='upper right', fontsize=12)
     return fig_to_bytes(fig)
@@ -106,15 +101,12 @@ def generar_fondo_monopolio():
     fig, ax = plt.subplots(figsize=(10, 5.6))
     configurar_ejes(ax, 'Cantidad (Q)', 'Precio / Costo (P, C)', 'Monopolio vs. Competencia Perfecta')
     x = np.linspace(0.1, 9, 100)
-    # Demanda (D) e Ingreso Marginal (IMg)
     ax.plot(x, 10 - x, 'b-', linewidth=3, label='Demanda (D)')
     ax.plot(x, 10 - 2*x, 'b--', linewidth=2, label='Ingreso Marginal (IMg)')
-    # Costo Marginal (CMg) ascendente
     ax.plot(x, 2 + 0.5*x, 'r-', linewidth=3, label='Costo Marginal (CMg)')
     
-    # Intersección IMg = CMg -> 10 - 2x = 2 + 0.5x -> 8 = 2.5x -> x = 3.2
     q_eq = 3.2
-    p_eq = 10 - q_eq # Precio en la curva de demanda
+    p_eq = 10 - q_eq
     ax.axvline(q_eq, color='gray', linestyle=':', linewidth=1.5)
     ax.axhline(p_eq, color='gray', linestyle=':', linewidth=1.5)
     ax.plot(q_eq, p_eq, 'ko', markersize=10)
@@ -148,14 +140,15 @@ def generar_fondo_enfermedad_holandesa():
 
 def generar_fondo_blanco():
     fig, ax = plt.subplots(figsize=(10, 5.6))
-    ax.set_xlim(0, 10); ax.set_ylim(0, 10)
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
     ax.axis('off')
     return fig_to_bytes(fig)
 
 # ==========================================
 # INTERFAZ DE USUARIO (BARRA SUPERIOR)
 # ==========================================
-st.title("📊 Pizarra Económica Interactiva")
+st.title(" Pizarra Económica Interactiva")
 
 # Controles en columnas para evitar el sidebar (mejor para TVs)
 col1, col2, col3, col4, col5 = st.columns([3, 2, 2, 2, 2])
@@ -177,7 +170,7 @@ with col4:
     drawing_mode = st.selectbox("Herramienta:", ("Lápiz", "Borrador", "Mover/Redimensionar"))
 
 with col5:
-    st.markdown("<br>", unsafe_allow_html) # Espaciado para alinear
+    st.markdown("<br>", unsafe_allow_html=True)  # ✅ CORREGIDO
     if st.button("🗑️ Limpiar Pizarra", type="primary"):
         st.session_state["canvas_key"] = st.session_state.get("canvas_key", 0) + 1
 
@@ -197,7 +190,7 @@ mapa_modelos = {
 
 bg_image = mapa_modelos[modelo]()
 
-# Renderizar el Canvas (¡Aquí está la magia de la responsividad!)
+# Renderizar el Canvas
 canvas_result = st_canvas(
     fill_color="rgba(255, 165, 0, 0.3)",
     stroke_width=stroke_width,
@@ -205,9 +198,9 @@ canvas_result = st_canvas(
     background_image=bg_image,
     drawing_mode="freedraw" if drawing_mode == "Lápiz" else ("eraser" if drawing_mode == "Borrador" else "transform"),
     key=f"canvas_{st.session_state.get('canvas_key', 0)}",
-    height=700,  # Altura fija, el ancho se adapta
-    use_container_width=True,  # CLAVE: Hace que ocupe el 100% de la TV/PC
-    display_toolbar=False,     # Ocultar toolbar de fabric.js para limpiar la interfaz
+    height=700,
+    use_container_width=True,
+    display_toolbar=False,
 )
 
 # Botón de descarga al final
