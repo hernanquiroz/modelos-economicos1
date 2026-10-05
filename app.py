@@ -9,7 +9,7 @@ from PIL import Image
 # --- Configuración de la página ---
 st.set_page_config(page_title="Pizarra Económica Interactiva", layout="wide", initial_sidebar_state="collapsed")
 
-# --- CSS Definitivo para limpiar la interfaz ---
+# --- CSS "Caza-Todo" para limpiar la interfaz pública ---
 st.markdown("""
     <style>
     .block-container {
@@ -22,11 +22,12 @@ st.markdown("""
         -ms-touch-action: none;
     }
     
-    /* Ocultar menús, headers y footer normales */
-    #MainMenu, footer, header, #stDecoration, 
-    [data-testid="stToolbar"], [data-testid="stMainMenu"], 
-    .stDeployButton, .stStatusWidget, [data-testid="stStatusWidget"], 
-    div[data-testid="stToolbar"], [data-testid="stHeader"] {
+    /* 1. Ocultar menús, headers y footers normales */
+    #MainMenu, footer, header, 
+    [data-testid="stMainMenu"], [data-testid="stHeader"], 
+    [data-testid="stToolbar"], [data-testid="stStatusWidget"], 
+    .stDeployButton, [data-testid="stFloatingActionButton"], 
+    div[data-testid="stMainMenu"] {
         visibility: hidden !important;
         display: none !important;
         height: 0 !important;
@@ -34,17 +35,22 @@ st.markdown("""
         pointer-events: none !important;
     }
 
-    /* Ocultar el botón flotante de Streamlit Cloud (Flechas naranjas) */
+    /* 2. Cazar específicamente el botón flotante de Streamlit Cloud (Flechas naranjas) */
+    a[href*="streamlit.io"], 
+    a[href*="github.com/streamlit"], 
     [data-testid="stCloudToolbar"], 
     .stCloudToolbar, 
     #st-cloud-toolbar, 
     [data-testid="stAppCloudToolbar"],
-    [data-testid="stFloatingActionButton"],
-    div[style*="position: fixed; bottom: 1rem; right: 1rem"],
-    a[href*="github.com/streamlit"] {
+    /* Cazar por posición fija en la esquina inferior derecha */
+    div[style*="position: fixed"], 
+    button[style*="position: fixed"],
+    iframe[style*="position: fixed"] {
         visibility: hidden !important;
         display: none !important;
         pointer-events: none !important;
+        bottom: -100px !important; /* Lo enviamos lejos de la pantalla */
+        right: -100px !important;
     }
     
     .stButton>button {
