@@ -9,7 +9,7 @@ from PIL import Image
 # --- Configuración de la página ---
 st.set_page_config(page_title="Pizarra Económica Interactiva", layout="wide", initial_sidebar_state="collapsed")
 
-# --- CSS para Responsividad, TV y Lápiz Óptico ---
+# --- CSS Definitivo para limpiar la interfaz ---
 st.markdown("""
     <style>
     .block-container {
@@ -21,11 +21,32 @@ st.markdown("""
         touch-action: none;
         -ms-touch-action: none;
     }
-    /* Ocultar TODOS los elementos nativos de Streamlit (Menú, Footer, Flechas) */
-    #MainMenu, footer, header, #stDecoration, [data-testid="stToolbar"], .stDeployButton {
+    
+    /* Ocultar menús, headers y footer normales */
+    #MainMenu, footer, header, #stDecoration, 
+    [data-testid="stToolbar"], [data-testid="stMainMenu"], 
+    .stDeployButton, .stStatusWidget, [data-testid="stStatusWidget"], 
+    div[data-testid="stToolbar"], [data-testid="stHeader"] {
         visibility: hidden !important;
         display: none !important;
+        height: 0 !important;
+        width: 0 !important;
+        pointer-events: none !important;
     }
+
+    /* Ocultar el botón flotante de Streamlit Cloud (Flechas naranjas) */
+    [data-testid="stCloudToolbar"], 
+    .stCloudToolbar, 
+    #st-cloud-toolbar, 
+    [data-testid="stAppCloudToolbar"],
+    [data-testid="stFloatingActionButton"],
+    div[style*="position: fixed; bottom: 1rem; right: 1rem"],
+    a[href*="github.com/streamlit"] {
+        visibility: hidden !important;
+        display: none !important;
+        pointer-events: none !important;
+    }
+    
     .stButton>button {
         width: 100%;
         height: 40px;
@@ -251,10 +272,7 @@ with col3:
     stroke_width = st.slider("Grosor:", 1, 40, 5, help="Controla el grosor del lápiz y el tamaño del borrador.")
 
 with col4:
-    # --- MENÚ DE HERRAMIENTAS ACTUALIZADO Y EN ESPAÑOL ---
     herramienta_opcion = st.selectbox("Herramienta:", ("✏️ Lápiz (Dibujar)", "🧽 Borrador", "↔️ Mover Trazos"))
-    
-    # Mapeo de la opción seleccionada al parámetro que entiende la librería
     modo_map = {
         "✏️ Lápiz (Dibujar)": "freedraw",
         "🧽 Borrador": "eraser",
@@ -329,7 +347,7 @@ canvas_result = st_canvas(
     stroke_width=stroke_width,
     stroke_color=stroke_color,
     background_image=bg_image,
-    drawing_mode=drawing_mode, # Usa el modo mapeado (freedraw, eraser, transform)
+    drawing_mode=drawing_mode,
     key=f"canvas_{st.session_state.get('canvas_key', 0)}",
     height=700,
     width=1200,
