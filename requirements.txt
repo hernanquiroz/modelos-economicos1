@@ -1,4 +1,5 @@
-streamlit
+streamlit==1.32.0
 streamlit-drawable-canvas==0.9.3
-matplotlib
-numpy
+matplotlib==3.8.2
+numpy==1.26.3
+Pillow==10.2.0
