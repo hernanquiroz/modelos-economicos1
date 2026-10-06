@@ -1,3 +1,4 @@
+
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 import matplotlib.pyplot as plt
@@ -5,88 +6,71 @@ import io
 import numpy as np
 import base64
 from PIL import Image
-from datetime import datetime
-import imageio
 
 # --- Configuración de la página ---
-st.set_page_config(
-    page_title="Pizarra Económica Interactiva",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-    menu_items={'Get Help': None, 'Report a bug': None, 'About': None}
-)
+st.set_page_config(page_title="Pizarra Económica Interactiva", layout="wide", initial_sidebar_state="collapsed")
 
-# --- CSS Definitivo: Modo Quirófano Total ---
+# --- CSS Definitivo (Streamlit Limpio) ---
 st.markdown("""
     <style>
-    .block-container { padding-top: 1rem; padding-bottom: 0; max-width: 100%; }
-    canvas { touch-action: none; -ms-touch-action: none; }
-    #MainMenu, header, footer,
-    [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"],
-    [data-testid="stStatusWidget"], [data-testid="stAppViewBlockContainer"],
-    [data-testid="stMainMenu"], [data-testid="stMainMenuButton"], [data-testid="stMainMenuAvatar"],
-    [data-testid="stMainMenuList"], [data-testid="stMainMenuOpen"],
-    [data-testid="stAppDeployButton"], [data-testid="stCloudToolbar"],
-    [data-testid="stAppCloudToolbar"], [data-testid="stFloatingActionButton"],
-    .stCloudToolbar, #st-cloud-toolbar {
-        visibility: hidden !important; display: none !important;
-        height: 0 !important; width: 0 !important;
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 0;
+        max-width: 100%;
     }
-    .viewerBadge_container__1QSob, .styles_viewerBadge__1yB5_,
-    .viewerBadge_link__1S137, .viewerBadge_text__1JaDK,
-    [class*="viewerBadge"], [class*="ViewerBadge"] {
-        visibility: hidden !important; display: none !important;
-        height: 0 !important; width: 0 !important;
+    canvas {
+        touch-action: none;
+        -ms-touch-action: none;
     }
-    body > div[style*="position: fixed"], body > button[style*="position: fixed"],
-    body > iframe[style*="position: fixed"], button[style*="position: fixed"],
-    div[style*="position: fixed"][style*="bottom"], iframe[style*="position: fixed"] {
-        visibility: hidden !important; display: none !important;
-        height: 0 !important; width: 0 !important; pointer-events: none !important;
-        right: -1000px !important; bottom: -1000px !important; opacity: 0 !important;
+    
+    /* Ocultar el menú principal y la nube de Streamlit */
+    #MainMenu {visibility: hidden;}
+    [data-testid="stMainMenu"] {visibility: hidden;}
+    [data-testid="stHeader"] {visibility: hidden;}
+    [data-testid="stToolbar"] {visibility: hidden;}
+    [data-testid="stStatusWidget"] {visibility: hidden;}
+    [data-testid="stAppViewBlockContainer"] {visibility: hidden;}
+    
+    /* Ocultar el botón flotante de menú de Streamlit */
+    [data-testid="stFloatingActionButton"] {
+        visibility: hidden !important;
+        display: none !important;
+        right: -100px !important;
+        bottom: -100px !important;
     }
-    iframe[title="streamlit_cloud_badge"], iframe[title*="badge"],
-    iframe[src*="streamlit.io"], iframe[src*="github.com"] {
-        display: none !important; visibility: hidden !important;
+    
+    /* Ocultar el footer de Streamlit Cloud */
+    footer {visibility: hidden;}
+    [data-testid="stFooter"] {visibility: hidden;}
+    
+    .stButton>button {
+        width: 100%;
+        height: 40px;
+        font-size: 16px;
     }
-    .stButton>button { width: 100%; height: 40px; font-size: 16px; }
     .leyenda-pie {
-        text-align: center; font-size: 11px; color: #666;
-        margin-top: 20px; font-family: sans-serif;
-    }
-    .rec-indicator {
-        text-align: center; padding: 8px; border-radius: 6px;
-        font-weight: bold; font-size: 14px;
+        text-align: center;
+        font-size: 11px;
+        color: #666;
+        margin-top: 20px;
+        font-family: sans-serif;
+        visibility: visible !important; /* Asegura que tu leyenda sí se vea */
     }
     </style>
 """, unsafe_allow_html=True)
 
-
 # ==========================================
-# ESTADO DE GRABACIÓN
-# ==========================================
-if 'recording' not in st.session_state: st.session_state.recording = False
-if 'grabacion_frames' not in st.session_state: st.session_state.grabacion_frames = []
-if 'ultimo_hash' not in st.session_state: st.session_state.ultimo_hash = None
-if 'grabacion_bytes' not in st.session_state: st.session_state.grabacion_bytes = None
-if 'canvas_key' not in st.session_state: st.session_state.canvas_key = 0
-if 'fps_grabacion' not in st.session_state: st.session_state.fps_grabacion = 2
-
-
-# ==========================================
-# FUNCIONES AUXILIARES
+# FUNCIONES DE GENERACIÓN DE FONDOS
 # ==========================================
 def fig_to_image(fig):
     buf = io.BytesIO()
     fig.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
     buf.seek(0)
-    img = Image.open(buf).copy()
-    plt.close(fig)
-    return img
-
+    return Image.open(buf)
 
 def configurar_ejes(ax, xlabel, ylabel, title):
-    ax.set_xlim(0, 10); ax.set_ylim(0, 10)
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
     ax.axhline(0, color='black', linewidth=2)
     ax.axvline(0, color='black', linewidth=2)
     ax.set_xlabel(xlabel, fontsize=14, fontweight='bold')
@@ -94,74 +78,8 @@ def configurar_ejes(ax, xlabel, ylabel, title):
     ax.set_title(title, fontsize=16, fontweight='bold', pad=15)
     ax.grid(True, linestyle='--', alpha=0.4)
 
-
-def crear_frame_compuesto(bg_image, canvas_result):
-    """Combina fondo del modelo + dibujo del canvas en un frame RGBA."""
-    if canvas_result.image_data is None:
-        return None
-    data = canvas_result.image_data
-    if data.dtype != np.uint8:
-        data = data.astype(np.uint8)
-    h, w = data.shape[:2]
-    drawing = Image.fromarray(data, mode='RGBA')
-    bg = bg_image.convert('RGBA').resize((w, h), Image.LANCZOS)
-    return Image.alpha_composite(bg, drawing)
-
-
-def exportar_mp4(frames, fps=2, max_w=1200):
-    """
-    Convierte una lista de PIL Images en un MP4 (H.264) en bytes.
-    - Convierte RGBA a RGB con fondo blanco.
-    - Garantiza dimensiones pares (requeridas por libx264).
-    """
-    if not frames:
-        return None
-
-    # 1. Convertir a RGB y normalizar tamaño
-    target_size = None
-    procesados = []
-    for f in frames:
-        if f.mode == 'RGBA':
-            bg = Image.new('RGB', f.size, (255, 255, 255))
-            bg.paste(f, mask=f.split()[-1])
-            f_rgb = bg
-        else:
-            f_rgb = f.convert('RGB')
-
-        if target_size is None:
-            w, h = f_rgb.size
-            if w > max_w:
-                ratio = max_w / w
-                w, h = max_w, int(h * ratio)
-            # H.264 requiere dimensiones pares
-            w -= (w % 2)
-            h -= (h % 2)
-            target_size = (w, h)
-
-        procesados.append(np.array(f_rgb.resize(target_size, Image.LANCZOS)))
-
-    # 2. Escribir MP4 en memoria
-    buf = io.BytesIO()
-    writer = imageio.get_writer(
-        buf,
-        format='mp4',
-        mode='I',
-        fps=fps,
-        codec='libx264',
-        quality=8,
-        pixelformat='yuv420p',
-        macro_block_size=1,
-        ffmpeg_params=['-preset', 'medium', '-crf', '23']
-    )
-    for frame in procesados:
-        writer.append_data(frame)
-    writer.close()
-    buf.seek(0)
-    return buf.getvalue()
-
-
 # ==========================================
-# GENERADORES DE FONDO
+# MODELOS INTERACTIVOS
 # ==========================================
 def generar_fondo_is_lm(is_shift=0, lm_shift=0):
     fig, ax = plt.subplots(figsize=(10, 5.6))
@@ -177,7 +95,6 @@ def generar_fondo_is_lm(is_shift=0, lm_shift=0):
     ax.legend(loc='upper right', fontsize=12)
     return fig_to_image(fig)
 
-
 def generar_fondo_oa_da(da_shift=0, oa_shift=0):
     fig, ax = plt.subplots(figsize=(10, 5.6))
     configurar_ejes(ax, 'Producto Real (Y)', 'Nivel de Precios (P)', 'Oferta y Demanda Agregada (Interactivo)')
@@ -192,7 +109,6 @@ def generar_fondo_oa_da(da_shift=0, oa_shift=0):
     ax.legend(loc='upper right', fontsize=12)
     return fig_to_image(fig)
 
-
 def generar_fondo_phillips(inflacion_esperada=1):
     fig, ax = plt.subplots(figsize=(10, 5.6))
     configurar_ejes(ax, 'Tasa de Desempleo (u)', 'Tasa de Inflación (π)', 'Curva de Phillips (Interactiva)')
@@ -204,16 +120,14 @@ def generar_fondo_phillips(inflacion_esperada=1):
     ax.legend(loc='upper right', fontsize=12)
     return fig_to_image(fig)
 
-
 def generar_fondo_fpp(recursos_x=10, recursos_y=10):
     fig, ax = plt.subplots(figsize=(10, 5.6))
     configurar_ejes(ax, 'Bien X (Ej. Alimentos)', 'Bien Y (Ej. Manufactura)', 'Frontera de Posibilidades de Producción')
     x = np.linspace(0, recursos_x, 100)
-    y = recursos_y * np.sqrt(np.clip(1 - (x/recursos_x)**2, 0, 1))
+    y = recursos_y * np.sqrt(1 - (x/recursos_x)**2)
     ax.plot(x, y, 'purple', linewidth=3, label=f'FPP (Recursos={recursos_x}x{recursos_y})')
     ax.legend(loc='upper right', fontsize=12)
     return fig_to_image(fig)
-
 
 def generar_fondo_monopolio(demand_shift=0, mc_shift=0):
     fig, ax = plt.subplots(figsize=(10, 5.6))
@@ -232,7 +146,6 @@ def generar_fondo_monopolio(demand_shift=0, mc_shift=0):
     ax.legend(loc='upper right', fontsize=11)
     return fig_to_image(fig)
 
-
 def generar_fondo_krugman_comercio(cc_shift=0, pp_shift=0):
     fig, ax = plt.subplots(figsize=(10, 5.6))
     configurar_ejes(ax, 'Escala de Producción (Q)', 'Precio / Costo (P/C)', 'Nueva Teoría Comercio (Krugman)')
@@ -243,7 +156,6 @@ def generar_fondo_krugman_comercio(cc_shift=0, pp_shift=0):
     ax.text(3.7, 4.0, 'Equilibrio', fontsize=12, fontweight='bold')
     ax.legend(loc='upper right', fontsize=12)
     return fig_to_image(fig)
-
 
 def generar_fondo_enfermedad_holandesa(intensidad_auge=1.5):
     fig, ax = plt.subplots(figsize=(10, 5.6))
@@ -258,23 +170,26 @@ def generar_fondo_enfermedad_holandesa(intensidad_auge=1.5):
     ax.legend(loc='upper left', fontsize=12)
     return fig_to_image(fig)
 
-
 def generar_fondo_blanco():
     fig, ax = plt.subplots(figsize=(10, 5.6))
-    ax.set_xlim(0, 10); ax.set_ylim(0, 10); ax.axis('off')
+    ax.set_xlim(0, 10)
+    ax.set_ylim(0, 10)
+    ax.axis('off')
     return fig_to_image(fig)
 
-
+# ==========================================
+# MODELO: KRUGMAN 4 CUADRANTES
+# ==========================================
 def generar_fondo_krugman_4q(shock_monetario=0):
     fig, axs = plt.subplots(2, 2, figsize=(12, 6.5))
-    fig.suptitle('Modelo de Krugman: Ajuste de Activos y Precios (4 Cuadrantes)',
-                 fontsize=16, fontweight='bold', y=0.98)
-
+    fig.suptitle('Modelo de Krugman: Ajuste de Activos y Precios (4 Cuadrantes)', fontsize=16, fontweight='bold', y=0.98)
+    
     r_base = 5 - shock_monetario * 1.5
     E_base = 5 + shock_monetario * 1.5
     inflacion = 5 + shock_monetario * 1.5
     saldos_reales = 5 - shock_monetario * 1.5
-
+    
+    # Q1
     ax1 = axs[0, 1]
     x1 = np.linspace(1, 10, 100)
     ax1.plot(x1, 10 - 0.8 * x1, 'g-', linewidth=2, label='Rendimiento Esperado')
@@ -283,7 +198,8 @@ def generar_fondo_krugman_4q(shock_monetario=0):
     ax1.set_title('Q1: Mercado de Divisas', fontsize=11)
     ax1.set_xlabel('Tipo de Cambio (E) [$ sube ->]', fontsize=9)
     ax1.set_ylabel('Rendim. Moneda Local', fontsize=9)
-
+    
+    # Q2
     ax2 = axs[0, 0]
     x2 = np.linspace(1, 10, 100)
     ax2.plot(x2, 10 - 0.8 * x2, 'b-', linewidth=2, label='Demanda de Dinero L(r)')
@@ -292,7 +208,8 @@ def generar_fondo_krugman_4q(shock_monetario=0):
     ax2.set_title('Q2: Mercado Monetario', fontsize=11)
     ax2.set_xlabel('Saldos Reales (M/P)', fontsize=9)
     ax2.set_ylabel('Tasa de Interés (r)', fontsize=9)
-
+    
+    # Q3
     ax3 = axs[1, 0]
     x3 = np.linspace(1, 10, 100)
     ax3.plot(x3, 10 - 0.8 * x3, 'm-', linewidth=2, label='Precios vs Saldos Reales')
@@ -300,7 +217,8 @@ def generar_fondo_krugman_4q(shock_monetario=0):
     ax3.set_title('Q3: Transmisión de Precios', fontsize=11)
     ax3.set_xlabel('Nivel de Precios / Inflación (P)', fontsize=9)
     ax3.set_ylabel('Saldos Reales (M/P)', fontsize=9)
-
+    
+    # Q4
     ax4 = axs[1, 1]
     x4 = np.linspace(1, 10, 100)
     ax4.plot(x4, 1 + 8/x4, 'c-', linewidth=2, label='Inflación vs T. Cambio')
@@ -308,37 +226,29 @@ def generar_fondo_krugman_4q(shock_monetario=0):
     ax4.set_title('Q4: Inflación y T. de Cambio', fontsize=11)
     ax4.set_xlabel('Tipo de Cambio (E)', fontsize=9)
     ax4.set_ylabel('Inflación (π)', fontsize=9)
-
+    
     for ax in [ax1, ax2, ax3, ax4]:
-        ax.set_xlim(0, 10); ax.set_ylim(0, 10)
+        ax.set_xlim(0, 10)
+        ax.set_ylim(0, 10)
         ax.grid(True, linestyle='--', alpha=0.4)
         ax.legend(loc='upper right', fontsize=8)
-
+        
     color_flecha = 'red' if shock_monetario > 0 else 'blue' if shock_monetario < 0 else 'gray'
     if shock_monetario != 0:
-        ax2.annotate('Interés ' + ('Baja' if shock_monetario > 0 else 'Sube'),
-                     xy=(saldos_reales, r_base), xytext=(saldos_reales+2, r_base+2),
-                     arrowprops=dict(arrowstyle='->', color=color_flecha),
-                     fontsize=9, color=color_flecha, fontweight='bold')
-        ax1.annotate('Dólar ' + ('Sube' if shock_monetario > 0 else 'Baja'),
-                     xy=(E_base, r_base), xytext=(E_base-2, r_base+2),
-                     arrowprops=dict(arrowstyle='->', color=color_flecha),
-                     fontsize=9, color=color_flecha, fontweight='bold')
-        ax3.annotate('Saldos ' + ('Caen' if shock_monetario > 0 else 'Suben'),
-                     xy=(inflacion, 10 - 0.8*inflacion), xytext=(inflacion+1, 10 - 0.8*inflacion+2),
-                     arrowprops=dict(arrowstyle='->', color=color_flecha),
-                     fontsize=9, color=color_flecha, fontweight='bold')
-        ax4.annotate('Inflación ' + ('Sube' if shock_monetario > 0 else 'Baja'),
-                     xy=(E_base, 1 + 8/E_base), xytext=(E_base-2, 1 + 8/E_base+2),
-                     arrowprops=dict(arrowstyle='->', color=color_flecha),
-                     fontsize=9, color=color_flecha, fontweight='bold')
-
+        ax2.annotate('Interés ' + ('Baja' if shock_monetario > 0 else 'Sube'), xy=(saldos_reales, r_base), xytext=(saldos_reales+2, r_base+2),
+                     arrowprops=dict(arrowstyle='->', color=color_flecha), fontsize=9, color=color_flecha, fontweight='bold')
+        ax1.annotate('Dólar ' + ('Sube' if shock_monetario > 0 else 'Baja'), xy=(E_base, r_base), xytext=(E_base-2, r_base+2),
+                     arrowprops=dict(arrowstyle='->', color=color_flecha), fontsize=9, color=color_flecha, fontweight='bold')
+        ax3.annotate('Saldos ' + ('Caen' if shock_monetario > 0 else 'Suben'), xy=(inflacion, 10 - 0.8*inflacion), xytext=(inflacion+1, 10 - 0.8*inflacion+2),
+                     arrowprops=dict(arrowstyle='->', color=color_flecha), fontsize=9, color=color_flecha, fontweight='bold')
+        ax4.annotate('Inflación ' + ('Sube' if shock_monetario > 0 else 'Baja'), xy=(E_base, 1 + 8/E_base), xytext=(E_base-2, 1 + 8/E_base+2),
+                     arrowprops=dict(arrowstyle='->', color=color_flecha), fontsize=9, color=color_flecha, fontweight='bold')
+        
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     return fig_to_image(fig)
 
-
 # ==========================================
-# INTERFAZ
+# INTERFAZ DE USUARIO
 # ==========================================
 st.title("📊 Pizarra Económica Interactiva")
 
@@ -347,7 +257,7 @@ col1, col2, col3, col4, col5 = st.columns([3, 2, 2, 2, 2])
 with col1:
     modelo = st.selectbox(
         "Modelo Económico:",
-        ("Pizarra en Blanco", "IS-LM (Keynesiano)", "OA-DA (Agregado)", "Curva de Phillips",
+        ("Pizarra en Blanco", "IS-LM (Keynesiano)", "OA-DA (Agregado)", "Curva de Phillips", 
          "Frontera Posibilidades Producción", "Monopolio", "Krugman (Comercio)", "Enfermedad Holandesa",
          "Krugman 4 Cuadrantes (T.Cambio/Inflación)")
     )
@@ -356,94 +266,22 @@ with col2:
     stroke_color = st.color_picker("Color:", "#000000")
 
 with col3:
-    stroke_width = st.slider("Grosor:", 1, 40, 5, help="Grosor del lápiz y tamaño del borrador.")
+    stroke_width = st.slider("Grosor:", 1, 40, 5, help="Controla el grosor del lápiz y el tamaño del borrador.")
 
 with col4:
     herramienta_opcion = st.selectbox("Herramienta:", ("✏️ Lápiz (Dibujar)", "🧽 Borrador", "↔️ Mover Trazos"))
-    drawing_mode = {
+    modo_map = {
         "✏️ Lápiz (Dibujar)": "freedraw",
         "🧽 Borrador": "eraser",
         "↔️ Mover Trazos": "transform"
-    }[herramienta_opcion]
+    }
+    drawing_mode = modo_map[herramienta_opcion]
 
 with col5:
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🧹 Limpiar Pizarra", type="primary"):
-        st.session_state.canvas_key += 1
+    if st.button("️ Limpiar Pizarra", type="primary"):
+        st.session_state["canvas_key"] = st.session_state.get("canvas_key", 0) + 1
 
-# ==========================================
-# CONTROLES DE GRABACIÓN DE CLASE
-# ==========================================
-st.markdown("---")
-st.markdown("### 🎬 Grabación de Clase")
-
-rec1, rec2, rec3, rec4, rec5 = st.columns([2, 1.5, 1.5, 2, 2])
-
-with rec1:
-    if st.session_state.recording:
-        if st.button("⏹️ Detener Grabación", use_container_width=True):
-            st.session_state.recording = False
-            if st.session_state.grabacion_frames:
-                with st.spinner("Generando MP4..."):
-                    st.session_state.grabacion_bytes = exportar_mp4(
-                        st.session_state.grabacion_frames,
-                        fps=st.session_state.fps_grabacion
-                    )
-            st.rerun()
-    else:
-        if st.button("🔴 Iniciar Grabación", type="primary", use_container_width=True):
-            st.session_state.recording = True
-            st.session_state.grabacion_frames = []
-            st.session_state.grabacion_bytes = None
-            st.session_state.ultimo_hash = None
-            st.rerun()
-
-with rec2:
-    if st.session_state.recording:
-        st.markdown('<div class="rec-indicator" style="background:#ffebee; color:#c62828;">● REC</div>',
-                    unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="rec-indicator" style="background:#f5f5f5; color:#666;">⚪ Detenido</div>',
-                    unsafe_allow_html=True)
-
-with rec3:
-    st.metric("Frames", len(st.session_state.grabacion_frames))
-
-with rec4:
-    st.session_state.fps_grabacion = st.slider(
-        "Velocidad (FPS):", 1, 10,
-        st.session_state.fps_grabacion,
-        help="Frames por segundo del MP4. 1-2 = clase pausada, 5-10 = fluido."
-    )
-
-with rec5:
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🗑️ Borrar Grabación", use_container_width=True):
-        st.session_state.grabacion_frames = []
-        st.session_state.grabacion_bytes = None
-        st.session_state.ultimo_hash = None
-        st.rerun()
-
-# Duración estimada y botón de descarga
-if st.session_state.grabacion_frames:
-    dur = len(st.session_state.grabacion_frames) / max(st.session_state.fps_grabacion, 1)
-    st.caption(f"⏱️ Duración estimada del video: **{dur:.1f} segundos** "
-               f"({len(st.session_state.grabacion_frames)} frames a {st.session_state.fps_grabacion} FPS)")
-
-if st.session_state.grabacion_bytes and not st.session_state.recording:
-    size_mb = len(st.session_state.grabacion_bytes) / (1024 * 1024)
-    st.download_button(
-        label=f"📥 Descargar MP4 de la Clase ({len(st.session_state.grabacion_frames)} frames · {size_mb:.1f} MB)",
-        data=st.session_state.grabacion_bytes,
-        file_name=f"clase_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4",
-        mime="video/mp4",
-        use_container_width=True,
-        key="descargar_mp4"
-    )
-
-# ==========================================
-# PARÁMETROS DEL MODELO
-# ==========================================
 st.markdown("---")
 st.markdown("### 📈 Ajustar Parámetros del Modelo (Mueve las curvas para explicar)")
 
@@ -456,33 +294,40 @@ if modelo == "IS-LM (Keynesiano)":
     c1, c2 = st.columns(2)
     with c1: is_shift = st.slider("🔴 Política Fiscal (Desplazar curva IS)", -3.0, 3.0, 0.0, 0.1)
     with c2: lm_shift = st.slider("🔵 Política Monetaria (Desplazar curva LM)", -3.0, 3.0, 0.0, 0.1)
+
 elif modelo == "OA-DA (Agregado)":
     c1, c2 = st.columns(2)
     with c1: da_shift = st.slider("🔴 Choque de Demanda Agregada", -3.0, 3.0, 0.0, 0.1)
     with c2: oa_shift = st.slider("🔵 Choque de Oferta Agregada", -3.0, 3.0, 0.0, 0.1)
+
 elif modelo == "Curva de Phillips":
     inflacion_esp = st.slider("Inflación Esperada (πe)", 0.0, 4.0, 1.0, 0.1)
+
 elif modelo == "Frontera Posibilidades Producción":
     c1, c2 = st.columns(2)
     with c1: rec_x = st.slider("Recursos/Tecnología para Bien X", 2, 12, 10)
     with c2: rec_y = st.slider("Recursos/Tecnología para Bien Y", 2, 12, 10)
+
 elif modelo == "Monopolio":
     c1, c2 = st.columns(2)
     with c1: dem_shift = st.slider("🔴 Cambio en Demanda", -3.0, 3.0, 0.0, 0.1)
     with c2: mc_shift = st.slider("🔵 Cambio en Costos Marginales", -2.0, 4.0, 0.0, 0.1)
+
 elif modelo == "Krugman (Comercio)":
     c1, c2 = st.columns(2)
     with c1: cc_shift = st.slider("Costos Medios (Economías de Escala)", -3.0, 3.0, 0.0, 0.1)
     with c2: pp_shift = st.slider("Precio de Mercado (Competencia)", -3.0, 3.0, 0.0, 0.1)
+
 elif modelo == "Enfermedad Holandesa":
     intensidad = st.slider("Intensidad del Boom de Materias Primas", 0.0, 4.0, 1.5, 0.1)
+
 elif modelo == "Krugman 4 Cuadrantes (T.Cambio/Inflación)":
     shock_mon = st.slider("🔴 Política Monetaria (Subir: Expansiva / Bajar: Contractiva)", -3.0, 3.0, 0.0, 0.1)
 
 st.markdown("---")
 
 # ==========================================
-# FONDO + CANVAS
+# LÓGICA DEL FONDO Y RENDERIZADO
 # ==========================================
 if modelo == "IS-LM (Keynesiano)": bg_image = generar_fondo_is_lm(is_shift, lm_shift)
 elif modelo == "OA-DA (Agregado)": bg_image = generar_fondo_oa_da(da_shift, oa_shift)
@@ -500,28 +345,13 @@ canvas_result = st_canvas(
     stroke_color=stroke_color,
     background_image=bg_image,
     drawing_mode=drawing_mode,
-    key=f"canvas_{st.session_state.canvas_key}",
-    height=700, width=1200,
+    key=f"canvas_{st.session_state.get('canvas_key', 0)}",
+    height=700,
+    width=1200,
     update_streamlit=True,
     return_image_data=True,
 )
 
-# ==========================================
-# CAPTURA DE FRAMES
-# ==========================================
-if st.session_state.recording and canvas_result.image_data is not None:
-    frame = crear_frame_compuesto(bg_image, canvas_result)
-    if frame is not None:
-        frame_hash = hash(frame.tobytes())
-        if frame_hash != st.session_state.ultimo_hash:
-            st.session_state.grabacion_frames.append(frame)
-            st.session_state.ultimo_hash = frame_hash
-        if len(st.session_state.grabacion_frames) > 1000:
-            st.session_state.grabacion_frames = st.session_state.grabacion_frames[-1000:]
-
-# ==========================================
-# DESCARGA PNG INDIVIDUAL
-# ==========================================
 if canvas_result.image_data is not None and canvas_result.image_data.any():
     st.markdown("---")
     img_array = canvas_result.image_data.astype(np.uint8)
@@ -529,14 +359,9 @@ if canvas_result.image_data is not None and canvas_result.image_data.any():
     buf = io.BytesIO()
     pil_img.save(buf, format="PNG")
     img_bytes = buf.getvalue()
-
+    
     b64 = base64.b64encode(img_bytes).decode()
-    href = (f'<a href="data:image/png;base64,{b64}" '
-            f'download="pizarra_{modelo.replace(" ", "_")}.png" '
-            f'style="font-size: 18px; padding: 10px; background-color: #007BFF; '
-            f'color: white; text-decoration: none; border-radius: 5px;">'
-            f'📥 Descargar Pizarra Actual en PNG</a>')
+    href = f'<a href="data:image/png;base64,{b64}" download="pizarra_{modelo.replace(" ", "_")}.png" style="font-size: 18px; padding: 10px; background-color: #007BFF; color: white; text-decoration: none; border-radius: 5px;">📥 Descargar Pizarra en PNG</a>'
     st.markdown(href, unsafe_allow_html=True)
 
-st.markdown('<div class="leyenda-pie">Pizarra diseñada por Ing. Hernán Quiroz</div>',
-            unsafe_allow_html=True)
+st.markdown('<div class="leyenda-pie">Pizarra diseñada por Ing. Hernán Quiroz</div>', unsafe_allow_html=True)
