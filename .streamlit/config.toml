@@ -1,12 +1,6 @@
+[client]
+toolbarMode = "minimal"
+
 [server]
-headless = true
-port = 8501
+maxUploadSize = 200
 
-[browser]
-gatherUsageStats = false
-
-[theme]
-primaryColor = "#007BFF"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F0F2F6"
-textColor = "#262730"
