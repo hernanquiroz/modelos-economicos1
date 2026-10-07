@@ -1,7 +1,6 @@
-streamlit
-streamlit-drawable-canvas
-matplotlib
-numpy
-Pillow
-imageio
-imageio-ffmpeg
+streamlit>=1.31.0
+streamlit-drawable-canvas==0.9.0
+matplotlib>=3.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+
